@@ -2,7 +2,7 @@ The initial push of this web-app was the result of AI generation by Claude (Free
 
     "A webpage which is basically a world map, with the ability to search for places, and add pins at places, as a to-do list. I will be hosting on github and I want to be able to use it from anywhere (home pc, office pc, phone)"
 
-The result was pretty solid from the beggining, now I hope to try and use it and manually add or fix whatever I personally need.\
+The result was pretty solid from the beggining, now I hope to try and use it and add or fix whatever I personally need.\
 Some more information about this webpage/app:
 
 ### Features
