@@ -13,14 +13,3 @@ Some more information about this webpage/app:
 • Sidebar filter — All / To go / Visited\
 • JSON export/import as a local backup fallback\
 • Works on mobile too (sidebar slides to bottom)\
-
-
-### ~How cross-device sync work~ (doesn't work for the moment)
-It uses GitHub Gist as a free sync backend — your own GitHub account stores the data as a private Gist. Setup takes ~2 minutes:\
-
-• Go to github.com → Settings → Developer settings → Personal access tokens → Tokens (classic)\
-• Generate a new token with only the gist scope\
-• In the app click ⚙ Settings, paste your token, save\
-• Click ⇅ Sync — it creates the Gist automatically and shows the Gist ID\
-
-After that, every time you add/edit/delete a place it auto-saves to Gist. On any other device, open the app, enter the same token + Gist ID, and it pulls your data.~~
