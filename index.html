@@ -18,7 +18,6 @@
     --visited: #b8a898;
     --gold: #d4a853;
     --border: rgba(26,22,18,0.15);
-    --shadow: 0 4px 24px rgba(26,22,18,0.12);
     --radius: 6px;
   }
 
@@ -40,7 +39,7 @@
     padding: 5px 10px;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
     flex-shrink: 0;
     border-bottom: 1px solid rgba(255,255,255,0.08);
     z-index: 1000;
@@ -54,7 +53,6 @@
     letter-spacing: 0.02em;
     flex-shrink: 0;
   }
-
   #header h1 span { color: var(--gold); font-style: normal; }
 
   #search-wrap {
@@ -116,19 +114,20 @@
     color: var(--paper);
     font-family: 'DM Mono', monospace;
     font-size: 0.72rem;
-    padding: 6px 12px;
+    padding: 6px 10px;
     cursor: pointer;
     transition: all 0.2s;
     white-space: nowrap;
+    line-height: 1;
   }
   .hbtn:hover { background: rgba(212,168,83,0.15); border-color: var(--gold); color: var(--gold); }
-  .hbtn.danger:hover { background: rgba(200,82,42,0.15); border-color: var(--accent); color: var(--accent); }
 
   /* ── MAIN LAYOUT ── */
   #main {
     flex: 1;
     display: flex;
     overflow: hidden;
+    position: relative;
   }
 
   /* ── MAP ── */
@@ -137,8 +136,6 @@
     z-index: 1;
     cursor: crosshair;
   }
-
-  /* Leaflet attribution tweak */
   .leaflet-control-attribution { font-size: 10px !important; background: rgba(245,240,232,0.7) !important; }
 
   /* ── SIDEBAR ── */
@@ -150,14 +147,49 @@
     flex-direction: column;
     border-left: 1px solid var(--border);
     overflow: hidden;
+    transition: width 0.25s ease, opacity 0.25s ease;
   }
+  #sidebar.collapsed {
+    width: 0;
+    opacity: 0;
+    border-left: none;
+    pointer-events: none;
+  }
+
+  /* Toggle tab — floats on left edge of sidebar */
+  #sidebar-toggle {
+    position: absolute;
+    right: 300px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 500;
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-right: none;
+    border-radius: 8px 0 0 8px;
+    width: 20px;
+    height: 52px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(26,22,18,0.45);
+    transition: right 0.25s ease, background 0.15s, color 0.15s;
+    user-select: none;
+  }
+  #sidebar-toggle:hover { background: var(--paper2); color: var(--ink); }
+  #sidebar-toggle::after { content: '›'; font-size: 0.9rem; }
+  #sidebar-toggle.collapsed {
+    right: 0;
+    border-right: 1px solid var(--border);
+  }
+  #sidebar-toggle.collapsed::after { content: '‹'; }
 
   #sidebar-header {
     padding: 14px 16px 10px;
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
   }
-
   #sidebar-header h2 {
     font-family: 'Playfair Display', serif;
     font-size: 1rem;
@@ -166,10 +198,7 @@
     margin-bottom: 8px;
   }
 
-  #filter-tabs {
-    display: flex; gap: 4px; flex-wrap: wrap;
-  }
-
+  #filter-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
   .ftab {
     font-family: 'DM Mono', monospace;
     font-size: 0.65rem;
@@ -184,11 +213,7 @@
   .ftab.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
   .ftab:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
 
-  #places-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 8px 0;
-  }
+  #places-list { flex: 1; overflow-y: auto; padding: 8px 0; }
 
   .place-item {
     padding: 10px 14px;
@@ -200,7 +225,6 @@
     gap: 10px;
   }
   .place-item:hover { background: var(--paper2); }
-  .place-item.selected { background: var(--paper2); }
 
   .place-dot {
     width: 10px; height: 10px;
@@ -208,9 +232,7 @@
     margin-top: 3px;
     flex-shrink: 0;
   }
-
   .place-info { flex: 1; min-width: 0; }
-
   .place-name {
     font-family: 'Playfair Display', serif;
     font-size: 0.85rem;
@@ -219,25 +241,20 @@
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .place-item.visited .place-name { color: var(--visited); text-decoration: line-through; }
-
   .place-meta {
     font-size: 0.65rem;
     color: rgba(26,22,18,0.45);
     margin-top: 2px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-
   .place-actions {
     display: flex; gap: 4px; flex-shrink: 0;
-    opacity: 0;
-    transition: opacity 0.15s;
+    opacity: 0; transition: opacity 0.15s;
   }
   .place-item:hover .place-actions { opacity: 1; }
-
   .pa-btn {
     background: none; border: none; cursor: pointer; padding: 2px 4px;
-    font-size: 0.75rem; border-radius: 3px;
-    transition: background 0.15s;
+    font-size: 0.75rem; border-radius: 3px; transition: background 0.15s;
   }
   .pa-btn:hover { background: var(--border); }
 
@@ -247,15 +264,53 @@
     font-size: 0.65rem;
     color: rgba(26,22,18,0.45);
     flex-shrink: 0;
-    display: flex; justify-content: space-between; align-items: center;
   }
 
-  #sync-status { display: flex; align-items: center; gap: 6px; }
-  #sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--visited); }
-  #sync-dot.ok { background: var(--accent2); }
-  #sync-dot.err { background: var(--accent); }
-  #sync-dot.busy { background: var(--gold); animation: pulse 1s infinite; }
-  @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.3 } }
+  /* ── PREVIEW POPUP ── */
+  .preview-popup {
+    background: var(--paper);
+    border-radius: 10px;
+    padding: 12px 14px;
+    min-width: 180px;
+    font-family: 'DM Mono', monospace;
+  }
+  .preview-popup .pp-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 10px;
+    line-height: 1.3;
+  }
+  .preview-popup .pp-btns { display: flex; gap: 6px; }
+  .preview-popup .pp-btn {
+    flex: 1;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    padding: 6px 8px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+    background: transparent;
+    color: var(--ink);
+    text-align: center;
+  }
+  .preview-popup .pp-btn.primary {
+    background: var(--ink); color: var(--paper); border-color: var(--ink);
+  }
+  .preview-popup .pp-btn.primary:hover { background: var(--accent); border-color: var(--accent); }
+  .preview-popup .pp-btn:not(.primary):hover { border-color: var(--ink); }
+
+  /* Strip Leaflet popup chrome */
+  .leaflet-popup-content-wrapper {
+    padding: 0 !important;
+    border-radius: 10px !important;
+    box-shadow: 0 6px 24px rgba(26,22,18,0.22) !important;
+  }
+  .leaflet-popup-content { margin: 0 !important; }
+  .leaflet-popup-tip-container { display: none; }
+  .leaflet-popup-close-button { display: none !important; }
 
   /* ── MODALS ── */
   .modal-overlay {
@@ -299,7 +354,6 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
   }
-
   .field input, .field textarea, .field select {
     width: 100%;
     background: var(--paper2);
@@ -315,9 +369,7 @@
   }
   .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--accent); }
 
-  .cat-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
-  }
+  .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
   .cat-btn {
     padding: 6px 4px;
     border: 1px solid var(--border);
@@ -402,10 +454,36 @@
 
   /* ── MOBILE ── */
   @media (max-width: 640px) {
-    #sidebar { width: 100%; position: absolute; bottom: 0; left: 0; right: 0; height: 45vh; z-index: 500; border-left: none; border-top: 1px solid var(--border); }
-    #main { flex-direction: column; }
-    #map { height: 55vh; flex: none; }
-    #header h1 { font-size: 1.1rem; }
+    #sidebar {
+      width: 100% !important;
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 42vh;
+      z-index: 500;
+      border-left: none;
+      border-top: 1px solid var(--border);
+      transition: height 0.25s ease, opacity 0.25s ease;
+    }
+    #sidebar.collapsed {
+      height: 0;
+      opacity: 0;
+    }
+    #sidebar-toggle {
+      right: auto !important;
+      left: 50%;
+      top: auto;
+      bottom: 42vh;
+      transform: translateX(-50%);
+      width: 52px;
+      height: 20px;
+      border-radius: 8px 8px 0 0;
+      border-right: 1px solid var(--border);
+      border-bottom: none;
+      transition: bottom 0.25s ease, background 0.15s;
+    }
+    #sidebar-toggle.collapsed { bottom: 0; }
+    #sidebar-toggle::after { content: '∨'; font-size: 0.75rem; }
+    #sidebar-toggle.collapsed::after { content: '∧'; }
   }
 </style>
 </head>
@@ -420,14 +498,14 @@
     <div id="search-results"></div>
   </div>
   <div id="header-actions">
-    <button class="hbtn" id="btn-sync" title="Sync with GitHub Gist">⇅</button>
-    <button class="hbtn" id="btn-settings">⚙</button>
+    <button class="hbtn" id="btn-settings" title="Settings">⚙</button>
   </div>
 </div>
 
 <!-- MAIN -->
 <div id="main">
   <div id="map"></div>
+  <div id="sidebar-toggle" title="Toggle places list"></div>
   <div id="sidebar">
     <div id="sidebar-header">
       <h2>My Places</h2>
@@ -440,7 +518,6 @@
     <div id="places-list"></div>
     <div id="sidebar-footer">
       <span id="places-count">0 places</span>
-      <span id="sync-status"><span id="sync-dot"></span><span id="sync-label">local only</span></span>
     </div>
   </div>
 </div>
@@ -479,38 +556,18 @@
 <!-- SETTINGS MODAL -->
 <div class="modal-overlay" id="modal-settings">
   <div class="modal">
-    <h3>⚙ Settings &amp; Sync</h3>
-
+    <h3>⚙ Settings</h3>
     <div class="setting-row">
-      <h4>☁ GitHub Gist Sync</h4>
-      <p>Your data is stored in a private Gist on your own GitHub account. Each device needs your token + Gist ID entered once. <strong>To use on a new device:</strong> copy the Gist ID from here and paste it there along with your token.</p>
-      <p style="margin-top:4px">Generate a token at <strong>github.com → Settings → Developer settings → Personal access tokens</strong> with <em>gist</em> scope only.</p>
-      <div class="field">
-        <label>Personal Access Token</label>
-        <input id="setting-pat" type="password" placeholder="ghp_…">
-      </div>
-      <div class="field">
-        <label>Gist ID <span style="opacity:.5">(auto-created on first sync — copy this to other devices)</span></label>
-        <div style="display:flex;gap:6px;align-items:center">
-          <input id="setting-gist-id" type="text" placeholder="Will be created automatically" style="flex:1">
-          <button class="mbtn" id="btn-copy-gist-id" title="Copy Gist ID" style="padding:7px 10px;flex-shrink:0">⎘ Copy</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="setting-row">
-      <h4>💾 Local Backup</h4>
-      <p>Export your places as a JSON file, or import from a previous export.</p>
+      <h4>💾 Backup &amp; Restore</h4>
+      <p>Export your places as a JSON file for safekeeping, or import a previous backup. Importing merges with existing places.</p>
       <div style="display:flex;gap:8px">
         <button class="mbtn" id="btn-export">Export JSON</button>
         <button class="mbtn" id="btn-import-trigger">Import JSON</button>
         <input type="file" id="btn-import" accept=".json" style="display:none">
       </div>
     </div>
-
     <div class="modal-btns">
-      <button class="mbtn" id="modal-settings-cancel">Cancel</button>
-      <button class="mbtn primary" id="modal-settings-save">Save Settings</button>
+      <button class="mbtn primary" id="modal-settings-close">Done</button>
     </div>
   </div>
 </div>
@@ -523,119 +580,183 @@
 //  DATA
 // ─────────────────────────────────────────────
 
-const CATEGORIES = [
-  { id:'nature',  label:'Nature',   icon:'🏔' },
-  { id:'city',    label:'City',     icon:'🏙' },
-  { id:'food',    label:'Food',     icon:'🍜' },
-  { id:'beach',   label:'Beach',    icon:'🏖' },
-  { id:'history', label:'History',  icon:'🏛' },
-  { id:'art',     label:'Art',      icon:'🎨' },
-  { id:'adventure',label:'Adventure',icon:'🧗' },
-  { id:'other',   label:'Other',    icon:'📍' },
+var CATEGORIES = [
+  { id:'nature',    label:'Nature',    icon:'🏔' },
+  { id:'city',      label:'City',      icon:'🏙' },
+  { id:'food',      label:'Food',      icon:'🍜' },
+  { id:'beach',     label:'Beach',     icon:'🏖' },
+  { id:'history',   label:'History',   icon:'🏛' },
+  { id:'art',       label:'Art',       icon:'🎨' },
+  { id:'adventure', label:'Adventure', icon:'🧗' },
+  { id:'other',     label:'Other',     icon:'📍' },
 ];
 
-const CAT_COLORS = {
+var CAT_COLORS = {
   nature:'#4a7c6f', city:'#5a6e8c', food:'#c8522a',
-  beach:'#3a8fa0', history:'#8c6a3a', art:'#7a4a8c',
+  beach:'#3a8fa0',  history:'#8c6a3a', art:'#7a4a8c',
   adventure:'#6a8c3a', other:'#8c7a6a'
 };
 
 function loadPlaces() {
-  try { return JSON.parse(localStorage.getItem('wanderlist_places') || '[]'); } catch { return []; }
+  try { return JSON.parse(localStorage.getItem('wanderlist_places') || '[]'); } catch(e) { return []; }
 }
-function savePlaces(places) {
-  localStorage.setItem('wanderlist_places', JSON.stringify(places));
-}
-function loadSettings() {
-  try { return JSON.parse(localStorage.getItem('wanderlist_settings') || '{}'); } catch { return {}; }
-}
-function saveSettings(s) {
-  localStorage.setItem('wanderlist_settings', JSON.stringify(s));
+function savePlaces(p) {
+  localStorage.setItem('wanderlist_places', JSON.stringify(p));
 }
 
-let places = loadPlaces();
-let settings = loadSettings();
-let currentFilter = 'all';
-let editingId = null;
-let pendingLatLng = null;
+var places = loadPlaces();
+var currentFilter = 'all';
+var editingId = null;
+var pendingLatLng = null;
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
 // ─────────────────────────────────────────────
 //  MAP
 // ─────────────────────────────────────────────
 
-const map = L.map('map', {
-  center: [20, 10],
-  zoom: 2,
-  zoomControl: true,
-  attributionControl: true
-});
+var map = L.map('map', { center: [20, 10], zoom: 2, zoomControl: true });
 
 L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
-  subdomains: 'abcd',
-  maxZoom: 19
+  subdomains: 'abcd', maxZoom: 19
 }).addTo(map);
 
-function makeIcon(cat, visited) {
-  const color = visited ? '#9e9080' : (CAT_COLORS[cat] || CAT_COLORS.other);
-  const catObj = CATEGORIES.find(c => c.id === cat) || CATEGORIES[7];
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="42" viewBox="0 0 34 42">
-    <filter id="ds"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.25"/></filter>
-    <path d="M17 2C9.8 2 4 7.8 4 15c0 10 13 25 13 25S30 25 30 15C30 7.8 24.2 2 17 2z"
-      fill="${color}" filter="url(#ds)" stroke="white" stroke-width="1.5"/>
-    <text x="17" y="20" text-anchor="middle" font-size="13" dominant-baseline="middle">${catObj.icon}</text>
-  </svg>`;
-  return L.divIcon({
-    html: svg,
-    className: '',
-    iconSize: [34, 42],
-    iconAnchor: [17, 42],
-    popupAnchor: [0, -44]
+// ── PREVIEW PIN ──
+var previewMarker = null;
+var previewPopup = null;
+var pendingName = '';
+
+var previewIcon = L.divIcon({
+  html: '<svg xmlns="http://www.w3.org/2000/svg" width="34" height="42" viewBox="0 0 34 42">' +
+        '<filter id="dprev"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.3"/></filter>' +
+        '<path d="M17 2C9.8 2 4 7.8 4 15c0 10 13 25 13 25S30 25 30 15C30 7.8 24.2 2 17 2z"' +
+        ' fill="#d4a853" filter="url(#dprev)" stroke="white" stroke-width="1.5"/>' +
+        '<text x="17" y="20" text-anchor="middle" font-size="16" dominant-baseline="middle">+</text>' +
+        '</svg>',
+  className: '',
+  iconSize: [34, 42],
+  iconAnchor: [17, 42],
+  popupAnchor: [0, -46]
+});
+
+function showPreviewPin(latlng, name) {
+  clearPreviewPin();
+  pendingLatLng = latlng;
+  pendingName = name || '';
+
+  previewMarker = L.marker([latlng.lat, latlng.lng], { icon: previewIcon, zIndexOffset: 1000 });
+  previewMarker.addTo(map);
+
+  var wrapper = document.createElement('div');
+  wrapper.className = 'preview-popup';
+
+  var label = document.createElement('div');
+  label.className = 'pp-name';
+  label.textContent = name || 'Add a pin here?';
+  wrapper.appendChild(label);
+
+  var btns = document.createElement('div');
+  btns.className = 'pp-btns';
+
+  var cancelBtn = document.createElement('button');
+  cancelBtn.className = 'pp-btn';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.addEventListener('click', function() { clearPreviewPin(); });
+
+  var addBtn = document.createElement('button');
+  addBtn.className = 'pp-btn primary';
+  addBtn.textContent = 'Add pin';
+  addBtn.addEventListener('click', function() {
+    var loc = pendingLatLng;
+    var nm = pendingName;
+    clearPreviewPin();
+    openAddModal(nm, loc);
   });
+
+  btns.appendChild(cancelBtn);
+  btns.appendChild(addBtn);
+  wrapper.appendChild(btns);
+
+  previewPopup = L.popup({ closeButton: false, autoClose: false, closeOnClick: false, minWidth: 180 })
+    .setLatLng([latlng.lat, latlng.lng])
+    .setContent(wrapper);
+
+  previewMarker.bindPopup(previewPopup).openPopup();
 }
 
-const markers = {};
+function clearPreviewPin() {
+  if (previewMarker) { previewMarker.remove(); previewMarker = null; }
+  previewPopup = null;
+  pendingLatLng = null;
+  pendingName = '';
+}
+
+// Click on blank map → preview pin
+map.on('click', function(e) {
+  if (previewMarker) { clearPreviewPin(); return; }
+  showPreviewPin(e.latlng, '');
+});
+
+// ── PLACE MARKERS ──
+function makeIcon(cat, visited) {
+  var color = visited ? '#9e9080' : (CAT_COLORS[cat] || CAT_COLORS.other);
+  var catObj = null;
+  for (var i = 0; i < CATEGORIES.length; i++) {
+    if (CATEGORIES[i].id === cat) { catObj = CATEGORIES[i]; break; }
+  }
+  if (!catObj) catObj = CATEGORIES[7];
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="34" height="42" viewBox="0 0 34 42">' +
+    '<filter id="ds' + cat + '"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.25"/></filter>' +
+    '<path d="M17 2C9.8 2 4 7.8 4 15c0 10 13 25 13 25S30 25 30 15C30 7.8 24.2 2 17 2z"' +
+    ' fill="' + color + '" filter="url(#ds' + cat + ')" stroke="white" stroke-width="1.5"/>' +
+    '<text x="17" y="20" text-anchor="middle" font-size="13" dominant-baseline="middle">' + catObj.icon + '</text>' +
+    '</svg>';
+  return L.divIcon({ html: svg, className: '', iconSize: [34,42], iconAnchor: [17,42], popupAnchor: [0,-44] });
+}
+
+var markers = {};
 
 function addMarker(place) {
   if (markers[place.id]) { markers[place.id].remove(); delete markers[place.id]; }
-  const m = L.marker([place.lat, place.lng], { icon: makeIcon(place.category, place.visited) });
+  var m = L.marker([place.lat, place.lng], { icon: makeIcon(place.category, place.visited) });
   m.addTo(map);
-  m.on('click', function() { openEditModal(place.id); });
+  (function(pid) {
+    m.on('click', function(e) {
+      L.DomEvent.stopPropagation(e);
+      clearPreviewPin();
+      openEditModal(pid);
+    });
+  })(place.id);
   markers[place.id] = m;
 }
 
 function renderMarkers() {
-  // remove all
-  Object.values(markers).forEach(m => m.remove());
-  Object.keys(markers).forEach(k => delete markers[k]);
+  Object.keys(markers).forEach(function(k) { markers[k].remove(); delete markers[k]; });
   places.forEach(addMarker);
 }
-
-// Click on map → add place
-map.on('click', function(e) {
-  pendingLatLng = e.latlng;
-  editingId = null;
-  openAddModal('', e.latlng);
-});
 
 // ─────────────────────────────────────────────
 //  SEARCH (Nominatim)
 // ─────────────────────────────────────────────
 
-const searchInput = document.getElementById('search-input');
-const searchResults = document.getElementById('search-results');
-let searchTimer = null;
+var searchInput = document.getElementById('search-input');
+var searchResultsEl = document.getElementById('search-results');
+var searchTimer = null;
 
 searchInput.addEventListener('input', function() {
   clearTimeout(searchTimer);
-  const q = this.value.trim();
-  if (q.length < 3) { searchResults.classList.remove('open'); return; }
-  searchTimer = setTimeout(function() { doSearch(q); }, 400);
+  var q = this.value.trim();
+  if (q.length < 3) { searchResultsEl.classList.remove('open'); return; }
+  var self = this;
+  searchTimer = setTimeout(function() { doSearch(self.value.trim()); }, 400);
 });
 
 searchInput.addEventListener('keydown', function(e) {
   if (e.key === 'Enter') { clearTimeout(searchTimer); doSearch(this.value.trim()); }
-  if (e.key === 'Escape') { searchResults.classList.remove('open'); }
+  if (e.key === 'Escape') { searchResultsEl.classList.remove('open'); }
 });
 
 document.getElementById('search-btn').addEventListener('click', function() {
@@ -644,104 +765,127 @@ document.getElementById('search-btn').addEventListener('click', function() {
 
 document.addEventListener('click', function(e) {
   if (!document.getElementById('search-wrap').contains(e.target)) {
-    searchResults.classList.remove('open');
+    searchResultsEl.classList.remove('open');
   }
 });
 
-async function doSearch(q) {
+function doSearch(q) {
   if (!q) return;
-  try {
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=6&addressdetails=1`;
-    const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
-    const data = await res.json();
-    renderSearchResults(data);
-  } catch(e) {
-    toast('Search failed. Check your connection.', true);
-  }
+  var url = 'https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(q) + '&format=json&limit=6&addressdetails=1';
+  fetch(url, { headers: { 'Accept-Language': 'en' } })
+    .then(function(r) { return r.json(); })
+    .then(renderSearchResults)
+    .catch(function() { toast('Search failed. Check your connection.', true); });
 }
 
 function renderSearchResults(data) {
-  searchResults.innerHTML = '';
+  searchResultsEl.innerHTML = '';
   if (!data.length) {
-    searchResults.innerHTML = '<div class="sr-item"><span class="sr-name">No results found</span></div>';
-    searchResults.classList.add('open');
+    searchResultsEl.innerHTML = '<div class="sr-item"><span class="sr-name">No results found</span></div>';
+    searchResultsEl.classList.add('open');
     return;
   }
   data.forEach(function(r) {
-    const div = document.createElement('div');
+    var div = document.createElement('div');
     div.className = 'sr-item';
-    const name = r.display_name.split(',')[0];
-    const detail = r.display_name.split(',').slice(1,3).join(',');
-    div.innerHTML = `<div class="sr-name">${name}</div><div class="sr-detail">${detail}</div>`;
-    div.addEventListener('click', function() {
-      const lat = parseFloat(r.lat), lng = parseFloat(r.lon);
-      map.flyTo([lat, lng], 10, { duration: 1.2 });
-      searchResults.classList.remove('open');
-      searchInput.value = '';
-      pendingLatLng = { lat, lng };
-      editingId = null;
-      openAddModal(r.display_name.split(',')[0], { lat, lng });
-    });
-    searchResults.appendChild(div);
+    var name = r.display_name.split(',')[0];
+    var detail = r.display_name.split(',').slice(1,3).join(',');
+    div.innerHTML = '<div class="sr-name">' + escHtml(name) + '</div><div class="sr-detail">' + escHtml(detail) + '</div>';
+    (function(lat, lng, nm) {
+      div.addEventListener('click', function() {
+        searchResultsEl.classList.remove('open');
+        searchInput.value = '';
+        map.flyTo([lat, lng], 10, { duration: 1.2 });
+        setTimeout(function() {
+          showPreviewPin({ lat: lat, lng: lng }, nm);
+        }, 350);
+      });
+    })(parseFloat(r.lat), parseFloat(r.lon), name);
+    searchResultsEl.appendChild(div);
   });
-  searchResults.classList.add('open');
+  searchResultsEl.classList.add('open');
 }
 
 // ─────────────────────────────────────────────
-//  SIDEBAR
+//  SIDEBAR TOGGLE
+// ─────────────────────────────────────────────
+
+var sidebarEl = document.getElementById('sidebar');
+var toggleBtn = document.getElementById('sidebar-toggle');
+var sidebarVisible = true;
+var isMobile = function() { return window.innerWidth <= 640; };
+
+toggleBtn.addEventListener('click', function() {
+  sidebarVisible = !sidebarVisible;
+  sidebarEl.classList.toggle('collapsed', !sidebarVisible);
+  toggleBtn.classList.toggle('collapsed', !sidebarVisible);
+  if (!isMobile()) {
+    toggleBtn.style.right = sidebarVisible ? '300px' : '0';
+  }
+  setTimeout(function() { map.invalidateSize(); }, 260);
+});
+
+// ─────────────────────────────────────────────
+//  SIDEBAR RENDER
 // ─────────────────────────────────────────────
 
 function renderSidebar() {
-  const list = document.getElementById('places-list');
-  let filtered = places.slice();
+  var list = document.getElementById('places-list');
+  var filtered = places.slice();
   if (currentFilter === 'todo') filtered = filtered.filter(function(p) { return !p.visited; });
   if (currentFilter === 'visited') filtered = filtered.filter(function(p) { return p.visited; });
 
   document.getElementById('places-count').textContent = places.length + ' place' + (places.length !== 1 ? 's' : '');
 
   if (!filtered.length) {
-    list.innerHTML = `<div id="empty-state"><span class="big">🗺</span>
-      ${currentFilter === 'all' ? 'Click anywhere on the map<br>or search to add places.' :
-        currentFilter === 'todo' ? 'No places left to visit!' : 'You haven\'t marked any<br>places as visited yet.'}</div>`;
+    list.innerHTML = '<div id="empty-state"><span class="big">🗺</span>' +
+      (currentFilter === 'all' ? 'Click anywhere on the map<br>or search to add places.' :
+       currentFilter === 'todo' ? 'No places left to visit!' : 'No visited places yet.') + '</div>';
     return;
   }
 
   list.innerHTML = '';
   filtered.forEach(function(p) {
-    const cat = CATEGORIES.find(function(c) { return c.id === p.category; }) || CATEGORIES[7];
-    const color = p.visited ? '#9e9080' : (CAT_COLORS[p.category] || CAT_COLORS.other);
-    const div = document.createElement('div');
+    var cat = null;
+    for (var i = 0; i < CATEGORIES.length; i++) {
+      if (CATEGORIES[i].id === p.category) { cat = CATEGORIES[i]; break; }
+    }
+    if (!cat) cat = CATEGORIES[7];
+    var color = p.visited ? '#9e9080' : (CAT_COLORS[p.category] || CAT_COLORS.other);
+    var div = document.createElement('div');
     div.className = 'place-item' + (p.visited ? ' visited' : '');
     div.dataset.id = p.id;
-    div.innerHTML = `
-      <div class="place-dot" style="background:${color}"></div>
-      <div class="place-info">
-        <div class="place-name">${cat.icon} ${p.name}</div>
-        <div class="place-meta">${p.note || p.category}</div>
-      </div>
-      <div class="place-actions">
-        <button class="pa-btn" data-action="toggle" title="${p.visited ? 'Mark as to-go' : 'Mark as visited'}">${p.visited ? '↩' : '✓'}</button>
-        <button class="pa-btn" data-action="fly" title="Fly to">⊕</button>
-        <button class="pa-btn" data-action="edit" title="Edit">✎</button>
-      </div>`;
-    div.addEventListener('click', function(e) {
-      const btn = e.target.closest('[data-action]');
-      if (btn) {
-        e.stopPropagation();
-        const action = btn.dataset.action;
-        if (action === 'toggle') { toggleVisited(p.id); }
-        else if (action === 'fly') { map.flyTo([p.lat, p.lng], 8, { duration: 1 }); }
-        else if (action === 'edit') { openEditModal(p.id); }
-        return;
-      }
-      map.flyTo([p.lat, p.lng], 8, { duration: 1 });
-    });
+    div.innerHTML =
+      '<div class="place-dot" style="background:' + color + '"></div>' +
+      '<div class="place-info">' +
+        '<div class="place-name">' + cat.icon + ' ' + escHtml(p.name) + '</div>' +
+        '<div class="place-meta">' + escHtml(p.note || p.category) + '</div>' +
+      '</div>' +
+      '<div class="place-actions">' +
+        '<button class="pa-btn" data-action="toggle" title="' + (p.visited ? 'Mark as to-go' : 'Mark as visited') + '">' + (p.visited ? '↩' : '✓') + '</button>' +
+        '<button class="pa-btn" data-action="fly" title="Fly to">⊕</button>' +
+        '<button class="pa-btn" data-action="edit" title="Edit">✎</button>' +
+      '</div>';
+    (function(place) {
+      div.addEventListener('click', function(e) {
+        var btn = e.target.closest('[data-action]');
+        if (btn) {
+          e.stopPropagation();
+          var action = btn.dataset.action;
+          if (action === 'toggle') toggleVisited(place.id);
+          else if (action === 'fly') map.flyTo([place.lat, place.lng], 8, { duration: 1 });
+          else if (action === 'edit') openEditModal(place.id);
+          return;
+        }
+        map.flyTo([place.lat, place.lng], 8, { duration: 1 });
+      });
+    })(p);
     list.appendChild(div);
   });
 }
 
 document.getElementById('filter-tabs').addEventListener('click', function(e) {
-  const btn = e.target.closest('.ftab');
+  var btn = e.target.closest('.ftab');
   if (!btn) return;
   document.querySelectorAll('.ftab').forEach(function(b) { b.classList.remove('active'); });
   btn.classList.add('active');
@@ -753,21 +897,19 @@ document.getElementById('filter-tabs').addEventListener('click', function(e) {
 //  MODAL — ADD / EDIT PLACE
 // ─────────────────────────────────────────────
 
-// Build category grid
 (function buildCatGrid() {
-  const grid = document.getElementById('cat-grid');
+  var grid = document.getElementById('cat-grid');
   CATEGORIES.forEach(function(c) {
-    const btn = document.createElement('button');
+    var btn = document.createElement('button');
     btn.className = 'cat-btn';
     btn.dataset.cat = c.id;
-    btn.innerHTML = `<span class="cat-icon">${c.icon}</span>${c.label}`;
+    btn.innerHTML = '<span class="cat-icon">' + c.icon + '</span>' + c.label;
     btn.addEventListener('click', function() {
       document.querySelectorAll('.cat-btn').forEach(function(b) { b.classList.remove('active'); });
       btn.classList.add('active');
     });
     grid.appendChild(btn);
   });
-  // default
   grid.querySelector('[data-cat="city"]').classList.add('active');
 })();
 
@@ -786,7 +928,8 @@ function openAddModal(name, latlng) {
 }
 
 function openEditModal(id) {
-  const p = places.find(function(x) { return x.id === id; });
+  var p = null;
+  for (var i = 0; i < places.length; i++) { if (places[i].id === id) { p = places[i]; break; } }
   if (!p) return;
   editingId = id;
   pendingLatLng = { lat: p.lat, lng: p.lng };
@@ -795,7 +938,7 @@ function openEditModal(id) {
   document.getElementById('place-note').value = p.note || '';
   document.getElementById('place-status').value = p.visited ? 'visited' : 'todo';
   document.querySelectorAll('.cat-btn').forEach(function(b) { b.classList.remove('active'); });
-  const catBtn = document.querySelector('.cat-btn[data-cat="' + p.category + '"]');
+  var catBtn = document.querySelector('.cat-btn[data-cat="' + p.category + '"]');
   if (catBtn) catBtn.classList.add('active');
   document.getElementById('modal-place-delete').style.display = '';
   document.getElementById('modal-place').classList.add('open');
@@ -809,21 +952,26 @@ document.getElementById('modal-place').addEventListener('click', function(e) {
 });
 
 document.getElementById('modal-place-save').addEventListener('click', function() {
-  const name = document.getElementById('place-name').value.trim();
+  var name = document.getElementById('place-name').value.trim();
   if (!name) { document.getElementById('place-name').focus(); return; }
-  const activeCat = document.querySelector('.cat-btn.active');
-  const cat = activeCat ? activeCat.dataset.cat : 'other';
-  const note = document.getElementById('place-note').value.trim();
-  const visited = document.getElementById('place-status').value === 'visited';
+  var activeCat = document.querySelector('.cat-btn.active');
+  var cat = activeCat ? activeCat.dataset.cat : 'other';
+  var note = document.getElementById('place-note').value.trim();
+  var visited = document.getElementById('place-status').value === 'visited';
 
   if (editingId) {
-    const p = places.find(function(x) { return x.id === editingId; });
-    if (p) { p.name = name; p.note = note; p.category = cat; p.visited = visited; }
+    for (var i = 0; i < places.length; i++) {
+      if (places[i].id === editingId) {
+        places[i].name = name; places[i].note = note;
+        places[i].category = cat; places[i].visited = visited;
+        break;
+      }
+    }
   } else {
     if (!pendingLatLng) return;
     places.push({
       id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
-      name, note, category: cat, visited,
+      name: name, note: note, category: cat, visited: visited,
       lat: pendingLatLng.lat, lng: pendingLatLng.lng,
       added: new Date().toISOString()
     });
@@ -834,7 +982,6 @@ document.getElementById('modal-place-save').addEventListener('click', function()
   renderSidebar();
   document.getElementById('modal-place').classList.remove('open');
   toast(editingId ? 'Place updated!' : 'Place added!');
-  autoSync();
 });
 
 document.getElementById('modal-place-delete').addEventListener('click', function() {
@@ -846,17 +993,16 @@ document.getElementById('modal-place-delete').addEventListener('click', function
   renderSidebar();
   document.getElementById('modal-place').classList.remove('open');
   toast('Place removed.');
-  autoSync();
 });
 
 function toggleVisited(id) {
-  const p = places.find(function(x) { return x.id === id; });
-  if (!p) return;
-  p.visited = !p.visited;
+  for (var i = 0; i < places.length; i++) {
+    if (places[i].id === id) { places[i].visited = !places[i].visited; break; }
+  }
   savePlaces(places);
-  addMarker(p);
+  var p = places.filter(function(x) { return x.id === id; })[0];
+  if (p) addMarker(p);
   renderSidebar();
-  autoSync();
 }
 
 // ─────────────────────────────────────────────
@@ -864,63 +1010,38 @@ function toggleVisited(id) {
 // ─────────────────────────────────────────────
 
 document.getElementById('btn-settings').addEventListener('click', function() {
-  document.getElementById('setting-pat').value = settings.pat || '';
-  document.getElementById('setting-gist-id').value = settings.gistId || '';
   document.getElementById('modal-settings').classList.add('open');
 });
-
-document.getElementById('modal-settings-cancel').addEventListener('click', function() {
+document.getElementById('modal-settings-close').addEventListener('click', function() {
   document.getElementById('modal-settings').classList.remove('open');
 });
 document.getElementById('modal-settings').addEventListener('click', function(e) {
   if (e.target === this) this.classList.remove('open');
 });
 
-document.getElementById('modal-settings-save').addEventListener('click', function() {
-  settings.pat = document.getElementById('setting-pat').value.trim();
-  settings.gistId = document.getElementById('setting-gist-id').value.trim();
-  saveSettings(settings);
-  document.getElementById('modal-settings').classList.remove('open');
-  toast('Settings saved!');
-  updateSyncUI();
-});
-
-document.getElementById('btn-copy-gist-id').addEventListener('click', function() {
-  const val = document.getElementById('setting-gist-id').value.trim();
-  if (!val) { toast('No Gist ID yet — sync first to create one.', true); return; }
-  navigator.clipboard.writeText(val).then(function() {
-    toast('Gist ID copied to clipboard!');
-  }).catch(function() {
-    // fallback: select the text
-    document.getElementById('setting-gist-id').select();
-    toast('Select + copy the Gist ID above.');
-  });
-});
-
-// Export
 document.getElementById('btn-export').addEventListener('click', function() {
-  const blob = new Blob([JSON.stringify(places, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
+  var blob = new Blob([JSON.stringify(places, null, 2)], { type: 'application/json' });
+  var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'wanderlist-backup.json';
   a.click();
 });
 
-// Import
 document.getElementById('btn-import-trigger').addEventListener('click', function() {
   document.getElementById('btn-import').click();
 });
 document.getElementById('btn-import').addEventListener('change', function(e) {
-  const file = e.target.files[0];
+  var file = e.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
+  var reader = new FileReader();
   reader.onload = function(ev) {
     try {
-      const imported = JSON.parse(ev.target.result);
-      if (!Array.isArray(imported)) throw new Error('Invalid');
-      // merge by id
+      var imported = JSON.parse(ev.target.result);
+      if (!Array.isArray(imported)) throw new Error('Invalid format');
       imported.forEach(function(p) {
-        if (!places.find(function(x) { return x.id === p.id; })) places.push(p);
+        var exists = false;
+        for (var i = 0; i < places.length; i++) { if (places[i].id === p.id) { exists = true; break; } }
+        if (!exists) places.push(p);
       });
       savePlaces(places);
       renderMarkers();
@@ -936,126 +1057,12 @@ document.getElementById('btn-import').addEventListener('change', function(e) {
 });
 
 // ─────────────────────────────────────────────
-//  GITHUB GIST SYNC
-// ─────────────────────────────────────────────
-
-const GIST_FILENAME = 'wanderlist-data.json';
-
-function updateSyncUI(state) {
-  const dot = document.getElementById('sync-dot');
-  const label = document.getElementById('sync-label');
-  dot.className = '';
-  if (!settings.pat) { label.textContent = 'local only'; return; }
-  if (state === 'ok') { dot.classList.add('ok'); label.textContent = 'synced'; }
-  else if (state === 'err') { dot.classList.add('err'); label.textContent = 'sync error'; }
-  else if (state === 'busy') { dot.classList.add('busy'); label.textContent = 'syncing…'; }
-  else { dot.classList.add('ok'); label.textContent = settings.gistId ? 'gist linked' : 'token set'; }
-}
-
-async function syncToGist() {
-  if (!settings.pat) { toast('Set your GitHub token in Settings first.', true); return; }
-  updateSyncUI('busy');
-  try {
-    const body = { files: {} };
-    body.files[GIST_FILENAME] = { content: JSON.stringify(places, null, 2) };
-    let res;
-    if (settings.gistId) {
-      // update
-      res = await fetch('https://api.github.com/gists/' + settings.gistId, {
-        method: 'PATCH',
-        headers: { Authorization: 'token ' + settings.pat, 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-    } else {
-      // create
-      body.description = 'Wanderlist — my places to go';
-      body.public = false;
-      res = await fetch('https://api.github.com/gists', {
-        method: 'POST',
-        headers: { Authorization: 'token ' + settings.pat, 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-    }
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    if (!settings.gistId) {
-      settings.gistId = data.id;
-      saveSettings(settings);
-      document.getElementById('setting-gist-id').value = data.id;
-      updateSyncUI('ok');
-      toast('Gist created! Open ⚙ Settings to copy the ID to other devices.');
-    } else {
-      updateSyncUI('ok');
-      toast('Synced to GitHub Gist ✓');
-    }
-  } catch(e) {
-    updateSyncUI('err');
-    toast('Sync failed: ' + e.message, true);
-  }
-}
-
-async function syncFromGist() {
-  if (!settings.pat || !settings.gistId) { return syncToGist(); }
-  updateSyncUI('busy');
-  try {
-    // Step 1: get the Gist metadata to find the raw_url
-    const metaRes = await fetch('https://api.github.com/gists/' + settings.gistId, {
-      headers: {
-        Authorization: 'token ' + settings.pat,
-        'Cache-Control': 'no-cache'
-      }
-    });
-    if (!metaRes.ok) throw new Error('HTTP ' + metaRes.status);
-    const meta = await metaRes.json();
-    const fileData = meta.files[GIST_FILENAME];
-    if (!fileData) throw new Error('File not found in Gist');
-
-    // Step 2: always fetch via raw_url to avoid truncation + caching
-    const rawRes = await fetch(fileData.raw_url + '?t=' + Date.now(), {
-      headers: { 'Cache-Control': 'no-cache' }
-    });
-    if (!rawRes.ok) throw new Error('Raw fetch HTTP ' + rawRes.status);
-    const remote = await rawRes.json();
-
-    // Merge: remote wins for same id, keep local-only ones
-    const merged = [...remote];
-    places.forEach(function(p) {
-      if (!merged.find(function(r) { return r.id === p.id; })) merged.push(p);
-    });
-    places = merged;
-    savePlaces(places);
-    renderMarkers();
-    renderSidebar();
-    updateSyncUI('ok');
-    toast('Loaded ' + remote.length + ' places from Gist ✓');
-  } catch(e) {
-    updateSyncUI('err');
-    toast('Sync failed: ' + e.message, true);
-  }
-}
-
-document.getElementById('btn-sync').addEventListener('click', function() {
-  if (!settings.pat) {
-    document.getElementById('setting-pat').value = settings.pat || '';
-    document.getElementById('setting-gist-id').value = settings.gistId || '';
-    document.getElementById('modal-settings').classList.add('open');
-    toast('Enter your GitHub token to enable sync.');
-    return;
-  }
-  syncFromGist();
-});
-
-function autoSync() {
-  if (settings.pat && settings.gistId) syncToGist();
-}
-
-// ─────────────────────────────────────────────
 //  TOAST
 // ─────────────────────────────────────────────
 
-let toastTimer = null;
+var toastTimer = null;
 function toast(msg, isErr) {
-  const el = document.getElementById('toast');
+  var el = document.getElementById('toast');
   el.textContent = msg;
   el.className = 'show' + (isErr ? ' err' : '');
   clearTimeout(toastTimer);
@@ -1068,12 +1075,6 @@ function toast(msg, isErr) {
 
 renderMarkers();
 renderSidebar();
-updateSyncUI();
-
-// Auto-load from Gist on startup if configured
-if (settings.pat && settings.gistId) {
-  setTimeout(syncFromGist, 800);
-}
 </script>
 </body>
 </html>
