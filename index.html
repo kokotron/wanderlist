@@ -420,8 +420,8 @@
     <div id="search-results"></div>
   </div>
   <div id="header-actions">
-    <button class="hbtn" id="btn-sync" title="Sync with GitHub Gist">⇅ Sync</button>
-    <!-- <button class="hbtn" id="btn-settings">⚙ Settings</button> -->
+    <button class="hbtn" id="btn-sync" title="Sync with GitHub Gist">⇅</button>
+    <button class="hbtn" id="btn-settings">⚙</button>
   </div>
 </div>
 
@@ -859,13 +859,11 @@ function toggleVisited(id) {
 //  SETTINGS MODAL
 // ─────────────────────────────────────────────
 
-/*
 document.getElementById('btn-settings').addEventListener('click', function() {
   document.getElementById('setting-pat').value = settings.pat || '';
   document.getElementById('setting-gist-id').value = settings.gistId || '';
   document.getElementById('modal-settings').classList.add('open');
 });
-*/
 
 document.getElementById('modal-settings-cancel').addEventListener('click', function() {
   document.getElementById('modal-settings').classList.remove('open');
