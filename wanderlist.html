@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wanderlist — Places to Go</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root {
+    --ink: #1a1612;
+    --paper: #f5f0e8;
+    --paper2: #ede7d9;
+    --accent: #c8522a;
+    --accent2: #4a7c6f;
+    --visited: #b8a898;
+    --gold: #d4a853;
+    --border: rgba(26,22,18,0.15);
+    --shadow: 0 4px 24px rgba(26,22,18,0.12);
+    --radius: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--ink);
+    color: var(--ink);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── HEADER ── */
+  #header {
+    background: var(--ink);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    z-index: 1000;
+  }
+
+  #header h1 {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 1.4rem;
+    color: var(--paper);
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
+  }
+
+  #header h1 span { color: var(--gold); font-style: normal; }
+
+  #search-wrap {
+    flex: 1;
+    max-width: 420px;
+    position: relative;
+  }
+
+  #search-input {
+    width: 100%;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: var(--radius);
+    padding: 8px 36px 8px 14px;
+    color: var(--paper);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  #search-input::placeholder { color: rgba(245,240,232,0.35); }
+  #search-input:focus { border-color: var(--gold); }
+
+  #search-btn {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer; color: var(--gold);
+    font-size: 1rem; padding: 0; line-height: 1;
+  }
+
+  #search-results {
+    position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+    background: var(--ink);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: var(--radius);
+    max-height: 260px; overflow-y: auto;
+    z-index: 9999;
+    display: none;
+  }
+  #search-results.open { display: block; }
+  .sr-item {
+    padding: 10px 14px;
+    font-size: 0.75rem;
+    color: var(--paper);
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    line-height: 1.4;
+    transition: background 0.15s;
+  }
+  .sr-item:hover { background: rgba(212,168,83,0.12); }
+  .sr-item .sr-name { font-weight: 400; color: var(--gold); }
+  .sr-item .sr-detail { color: rgba(245,240,232,0.45); font-size: 0.68rem; margin-top: 2px; }
+
+  #header-actions { display: flex; gap: 8px; margin-left: auto; }
+
+  .hbtn {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: var(--radius);
+    color: var(--paper);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .hbtn:hover { background: rgba(212,168,83,0.15); border-color: var(--gold); color: var(--gold); }
+  .hbtn.danger:hover { background: rgba(200,82,42,0.15); border-color: var(--accent); color: var(--accent); }
+
+  /* ── MAIN LAYOUT ── */
+  #main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* ── MAP ── */
+  #map {
+    flex: 1;
+    z-index: 1;
+    cursor: crosshair;
+  }
+
+  /* Leaflet attribution tweak */
+  .leaflet-control-attribution { font-size: 10px !important; background: rgba(245,240,232,0.7) !important; }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    width: 300px;
+    flex-shrink: 0;
+    background: var(--paper);
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  #sidebar-header {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  #sidebar-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+
+  #filter-tabs {
+    display: flex; gap: 4px; flex-wrap: wrap;
+  }
+
+  .ftab {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    padding: 3px 8px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    color: var(--ink);
+    transition: all 0.15s;
+  }
+  .ftab.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .ftab:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+
+  #places-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+  }
+
+  .place-item {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .place-item:hover { background: var(--paper2); }
+  .place-item.selected { background: var(--paper2); }
+
+  .place-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    margin-top: 3px;
+    flex-shrink: 0;
+  }
+
+  .place-info { flex: 1; min-width: 0; }
+
+  .place-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .place-item.visited .place-name { color: var(--visited); text-decoration: line-through; }
+
+  .place-meta {
+    font-size: 0.65rem;
+    color: rgba(26,22,18,0.45);
+    margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .place-actions {
+    display: flex; gap: 4px; flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .place-item:hover .place-actions { opacity: 1; }
+
+  .pa-btn {
+    background: none; border: none; cursor: pointer; padding: 2px 4px;
+    font-size: 0.75rem; border-radius: 3px;
+    transition: background 0.15s;
+  }
+  .pa-btn:hover { background: var(--border); }
+
+  #sidebar-footer {
+    padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    font-size: 0.65rem;
+    color: rgba(26,22,18,0.45);
+    flex-shrink: 0;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+
+  #sync-status { display: flex; align-items: center; gap: 6px; }
+  #sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--visited); }
+  #sync-dot.ok { background: var(--accent2); }
+  #sync-dot.err { background: var(--accent); }
+  #sync-dot.busy { background: var(--gold); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.3 } }
+
+  /* ── MODALS ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(26,22,18,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 9000;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+  .modal {
+    background: var(--paper);
+    border-radius: 10px;
+    padding: 28px;
+    width: 420px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: translateY(8px);
+    transition: transform 0.2s;
+    box-shadow: 0 20px 60px rgba(26,22,18,0.3);
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+
+  .modal h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    margin-bottom: 18px;
+    color: var(--ink);
+  }
+
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 0.68rem;
+    color: rgba(26,22,18,0.55);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .field input, .field textarea, .field select {
+    width: 100%;
+    background: var(--paper2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s;
+    resize: vertical;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--accent); }
+
+  .cat-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+  }
+  .cat-btn {
+    padding: 6px 4px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--paper2);
+    cursor: pointer;
+    font-size: 0.68rem;
+    text-align: center;
+    transition: all 0.15s;
+    color: var(--ink);
+    font-family: 'DM Mono', monospace;
+  }
+  .cat-btn:hover { border-color: var(--accent); }
+  .cat-btn.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .cat-icon { display: block; font-size: 1.1rem; margin-bottom: 2px; }
+
+  .modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+  .mbtn {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    padding: 8px 18px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    color: var(--ink);
+  }
+  .mbtn.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .mbtn.primary:hover { background: var(--accent); border-color: var(--accent); }
+  .mbtn:hover { border-color: var(--ink); }
+  .mbtn.warn { border-color: var(--accent); color: var(--accent); }
+  .mbtn.warn:hover { background: var(--accent); color: var(--paper); }
+
+  /* ── SETTINGS MODAL ── */
+  .setting-row {
+    background: var(--paper2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .setting-row h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+  }
+  .setting-row p {
+    font-size: 0.68rem;
+    color: rgba(26,22,18,0.55);
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--ink); color: var(--paper);
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-family: 'DM Mono', monospace;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 99999;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #toast.err { background: var(--accent); }
+
+  /* ── EMPTY STATE ── */
+  #empty-state {
+    padding: 24px 16px;
+    text-align: center;
+    color: rgba(26,22,18,0.35);
+    font-size: 0.72rem;
+    line-height: 1.8;
+  }
+  #empty-state .big { font-size: 1.8rem; display: block; margin-bottom: 8px; }
+
+  /* ── MOBILE ── */
+  @media (max-width: 640px) {
+    #sidebar { width: 100%; position: absolute; bottom: 0; left: 0; right: 0; height: 45vh; z-index: 500; border-left: none; border-top: 1px solid var(--border); }
+    #main { flex-direction: column; }
+    #map { height: 55vh; flex: none; }
+    #header h1 { font-size: 1.1rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <h1>Wander<span>list</span></h1>
+  <div id="search-wrap">
+    <input id="search-input" type="text" placeholder="Search for a place…" autocomplete="off">
+    <button id="search-btn" title="Search">⌕</button>
+    <div id="search-results"></div>
+  </div>
+  <div id="header-actions">
+    <button class="hbtn" id="btn-sync" title="Sync with GitHub Gist">⇅ Sync</button>
+    <button class="hbtn" id="btn-settings">⚙ Settings</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <div id="map"></div>
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <h2>My Places</h2>
+      <div id="filter-tabs">
+        <button class="ftab active" data-filter="all">All</button>
+        <button class="ftab" data-filter="todo">To go</button>
+        <button class="ftab" data-filter="visited">Visited</button>
+      </div>
+    </div>
+    <div id="places-list"></div>
+    <div id="sidebar-footer">
+      <span id="places-count">0 places</span>
+      <span id="sync-status"><span id="sync-dot"></span><span id="sync-label">local only</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT PLACE MODAL -->
+<div class="modal-overlay" id="modal-place">
+  <div class="modal">
+    <h3 id="modal-place-title">Add a Place</h3>
+    <div class="field">
+      <label>Name</label>
+      <input id="place-name" type="text" placeholder="e.g. Santorini, Greece">
+    </div>
+    <div class="field">
+      <label>Note</label>
+      <textarea id="place-note" rows="2" placeholder="Why do you want to go? Any details…"></textarea>
+    </div>
+    <div class="field">
+      <label>Category</label>
+      <div class="cat-grid" id="cat-grid"></div>
+    </div>
+    <div class="field">
+      <label>Status</label>
+      <select id="place-status">
+        <option value="todo">Want to go ✈</option>
+        <option value="visited">Already visited ✓</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="mbtn warn" id="modal-place-delete" style="margin-right:auto;display:none">Delete</button>
+      <button class="mbtn" id="modal-place-cancel">Cancel</button>
+      <button class="mbtn primary" id="modal-place-save">Save Place</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="modal-settings">
+  <div class="modal">
+    <h3>⚙ Settings &amp; Sync</h3>
+
+    <div class="setting-row">
+      <h4>☁ GitHub Gist Sync</h4>
+      <p>Sync your places across devices using a private GitHub Gist. Create a personal access token at <strong>github.com → Settings → Developer settings → Tokens</strong> with <em>gist</em> scope only.</p>
+      <div class="field">
+        <label>Personal Access Token</label>
+        <input id="setting-pat" type="password" placeholder="ghp_…">
+      </div>
+      <div class="field">
+        <label>Gist ID <span style="opacity:.5">(auto-filled after first sync)</span></label>
+        <input id="setting-gist-id" type="text" placeholder="Will be created automatically">
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <h4>💾 Local Backup</h4>
+      <p>Export your places as a JSON file, or import from a previous export.</p>
+      <div style="display:flex;gap:8px">
+        <button class="mbtn" id="btn-export">Export JSON</button>
+        <button class="mbtn" id="btn-import-trigger">Import JSON</button>
+        <input type="file" id="btn-import" accept=".json" style="display:none">
+      </div>
+    </div>
+
+    <div class="modal-btns">
+      <button class="mbtn" id="modal-settings-cancel">Cancel</button>
+      <button class="mbtn primary" id="modal-settings-save">Save Settings</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────
+//  DATA
+// ─────────────────────────────────────────────
+
+const CATEGORIES = [
+  { id:'nature',  label:'Nature',   icon:'🏔' },
+  { id:'city',    label:'City',     icon:'🏙' },
+  { id:'food',    label:'Food',     icon:'🍜' },
+  { id:'beach',   label:'Beach',    icon:'🏖' },
+  { id:'history', label:'History',  icon:'🏛' },
+  { id:'art',     label:'Art',      icon:'🎨' },
+  { id:'adventure',label:'Adventure',icon:'🧗' },
+  { id:'other',   label:'Other',    icon:'📍' },
+];
+
+const CAT_COLORS = {
+  nature:'#4a7c6f', city:'#5a6e8c', food:'#c8522a',
+  beach:'#3a8fa0', history:'#8c6a3a', art:'#7a4a8c',
+  adventure:'#6a8c3a', other:'#8c7a6a'
+};
+
+function loadPlaces() {
+  try { return JSON.parse(localStorage.getItem('wanderlist_places') || '[]'); } catch { return []; }
+}
+function savePlaces(places) {
+  localStorage.setItem('wanderlist_places', JSON.stringify(places));
+}
+function loadSettings() {
+  try { return JSON.parse(localStorage.getItem('wanderlist_settings') || '{}'); } catch { return {}; }
+}
+function saveSettings(s) {
+  localStorage.setItem('wanderlist_settings', JSON.stringify(s));
+}
+
+let places = loadPlaces();
+let settings = loadSettings();
+let currentFilter = 'all';
+let editingId = null;
+let pendingLatLng = null;
+
+// ─────────────────────────────────────────────
+//  MAP
+// ─────────────────────────────────────────────
+
+const map = L.map('map', {
+  center: [20, 10],
+  zoom: 2,
+  zoomControl: true,
+  attributionControl: true
+});
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+  subdomains: 'abcd',
+  maxZoom: 19
+}).addTo(map);
+
+function makeIcon(cat, visited) {
+  const color = visited ? '#9e9080' : (CAT_COLORS[cat] || CAT_COLORS.other);
+  const catObj = CATEGORIES.find(c => c.id === cat) || CATEGORIES[7];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="42" viewBox="0 0 34 42">
+    <filter id="ds"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.25"/></filter>
+    <path d="M17 2C9.8 2 4 7.8 4 15c0 10 13 25 13 25S30 25 30 15C30 7.8 24.2 2 17 2z"
+      fill="${color}" filter="url(#ds)" stroke="white" stroke-width="1.5"/>
+    <text x="17" y="20" text-anchor="middle" font-size="13" dominant-baseline="middle">${catObj.icon}</text>
+  </svg>`;
+  return L.divIcon({
+    html: svg,
+    className: '',
+    iconSize: [34, 42],
+    iconAnchor: [17, 42],
+    popupAnchor: [0, -44]
+  });
+}
+
+const markers = {};
+
+function addMarker(place) {
+  if (markers[place.id]) { markers[place.id].remove(); delete markers[place.id]; }
+  const m = L.marker([place.lat, place.lng], { icon: makeIcon(place.category, place.visited) });
+  m.addTo(map);
+  m.on('click', function() { openEditModal(place.id); });
+  markers[place.id] = m;
+}
+
+function renderMarkers() {
+  // remove all
+  Object.values(markers).forEach(m => m.remove());
+  Object.keys(markers).forEach(k => delete markers[k]);
+  places.forEach(addMarker);
+}
+
+// Click on map → add place
+map.on('click', function(e) {
+  pendingLatLng = e.latlng;
+  editingId = null;
+  openAddModal('', e.latlng);
+});
+
+// ─────────────────────────────────────────────
+//  SEARCH (Nominatim)
+// ─────────────────────────────────────────────
+
+const searchInput = document.getElementById('search-input');
+const searchResults = document.getElementById('search-results');
+let searchTimer = null;
+
+searchInput.addEventListener('input', function() {
+  clearTimeout(searchTimer);
+  const q = this.value.trim();
+  if (q.length < 3) { searchResults.classList.remove('open'); return; }
+  searchTimer = setTimeout(function() { doSearch(q); }, 400);
+});
+
+searchInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { clearTimeout(searchTimer); doSearch(this.value.trim()); }
+  if (e.key === 'Escape') { searchResults.classList.remove('open'); }
+});
+
+document.getElementById('search-btn').addEventListener('click', function() {
+  doSearch(searchInput.value.trim());
+});
+
+document.addEventListener('click', function(e) {
+  if (!document.getElementById('search-wrap').contains(e.target)) {
+    searchResults.classList.remove('open');
+  }
+});
+
+async function doSearch(q) {
+  if (!q) return;
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=6&addressdetails=1`;
+    const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+    const data = await res.json();
+    renderSearchResults(data);
+  } catch(e) {
+    toast('Search failed. Check your connection.', true);
+  }
+}
+
+function renderSearchResults(data) {
+  searchResults.innerHTML = '';
+  if (!data.length) {
+    searchResults.innerHTML = '<div class="sr-item"><span class="sr-name">No results found</span></div>';
+    searchResults.classList.add('open');
+    return;
+  }
+  data.forEach(function(r) {
+    const div = document.createElement('div');
+    div.className = 'sr-item';
+    const name = r.display_name.split(',')[0];
+    const detail = r.display_name.split(',').slice(1,3).join(',');
+    div.innerHTML = `<div class="sr-name">${name}</div><div class="sr-detail">${detail}</div>`;
+    div.addEventListener('click', function() {
+      const lat = parseFloat(r.lat), lng = parseFloat(r.lon);
+      map.flyTo([lat, lng], 10, { duration: 1.2 });
+      searchResults.classList.remove('open');
+      searchInput.value = '';
+      pendingLatLng = { lat, lng };
+      editingId = null;
+      openAddModal(r.display_name.split(',')[0], { lat, lng });
+    });
+    searchResults.appendChild(div);
+  });
+  searchResults.classList.add('open');
+}
+
+// ─────────────────────────────────────────────
+//  SIDEBAR
+// ─────────────────────────────────────────────
+
+function renderSidebar() {
+  const list = document.getElementById('places-list');
+  let filtered = places.slice();
+  if (currentFilter === 'todo') filtered = filtered.filter(function(p) { return !p.visited; });
+  if (currentFilter === 'visited') filtered = filtered.filter(function(p) { return p.visited; });
+
+  document.getElementById('places-count').textContent = places.length + ' place' + (places.length !== 1 ? 's' : '');
+
+  if (!filtered.length) {
+    list.innerHTML = `<div id="empty-state"><span class="big">🗺</span>
+      ${currentFilter === 'all' ? 'Click anywhere on the map<br>or search to add places.' :
+        currentFilter === 'todo' ? 'No places left to visit!' : 'You haven\'t marked any<br>places as visited yet.'}</div>`;
+    return;
+  }
+
+  list.innerHTML = '';
+  filtered.forEach(function(p) {
+    const cat = CATEGORIES.find(function(c) { return c.id === p.category; }) || CATEGORIES[7];
+    const color = p.visited ? '#9e9080' : (CAT_COLORS[p.category] || CAT_COLORS.other);
+    const div = document.createElement('div');
+    div.className = 'place-item' + (p.visited ? ' visited' : '');
+    div.dataset.id = p.id;
+    div.innerHTML = `
+      <div class="place-dot" style="background:${color}"></div>
+      <div class="place-info">
+        <div class="place-name">${cat.icon} ${p.name}</div>
+        <div class="place-meta">${p.note || p.category}</div>
+      </div>
+      <div class="place-actions">
+        <button class="pa-btn" data-action="toggle" title="${p.visited ? 'Mark as to-go' : 'Mark as visited'}">${p.visited ? '↩' : '✓'}</button>
+        <button class="pa-btn" data-action="fly" title="Fly to">⊕</button>
+        <button class="pa-btn" data-action="edit" title="Edit">✎</button>
+      </div>`;
+    div.addEventListener('click', function(e) {
+      const btn = e.target.closest('[data-action]');
+      if (btn) {
+        e.stopPropagation();
+        const action = btn.dataset.action;
+        if (action === 'toggle') { toggleVisited(p.id); }
+        else if (action === 'fly') { map.flyTo([p.lat, p.lng], 8, { duration: 1 }); }
+        else if (action === 'edit') { openEditModal(p.id); }
+        return;
+      }
+      map.flyTo([p.lat, p.lng], 8, { duration: 1 });
+    });
+    list.appendChild(div);
+  });
+}
+
+document.getElementById('filter-tabs').addEventListener('click', function(e) {
+  const btn = e.target.closest('.ftab');
+  if (!btn) return;
+  document.querySelectorAll('.ftab').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  currentFilter = btn.dataset.filter;
+  renderSidebar();
+});
+
+// ─────────────────────────────────────────────
+//  MODAL — ADD / EDIT PLACE
+// ─────────────────────────────────────────────
+
+// Build category grid
+(function buildCatGrid() {
+  const grid = document.getElementById('cat-grid');
+  CATEGORIES.forEach(function(c) {
+    const btn = document.createElement('button');
+    btn.className = 'cat-btn';
+    btn.dataset.cat = c.id;
+    btn.innerHTML = `<span class="cat-icon">${c.icon}</span>${c.label}`;
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.cat-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+    });
+    grid.appendChild(btn);
+  });
+  // default
+  grid.querySelector('[data-cat="city"]').classList.add('active');
+})();
+
+function openAddModal(name, latlng) {
+  pendingLatLng = latlng;
+  editingId = null;
+  document.getElementById('modal-place-title').textContent = 'Add a Place';
+  document.getElementById('place-name').value = name || '';
+  document.getElementById('place-note').value = '';
+  document.getElementById('place-status').value = 'todo';
+  document.querySelectorAll('.cat-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelector('.cat-btn[data-cat="city"]').classList.add('active');
+  document.getElementById('modal-place-delete').style.display = 'none';
+  document.getElementById('modal-place').classList.add('open');
+  setTimeout(function() { document.getElementById('place-name').focus(); }, 100);
+}
+
+function openEditModal(id) {
+  const p = places.find(function(x) { return x.id === id; });
+  if (!p) return;
+  editingId = id;
+  pendingLatLng = { lat: p.lat, lng: p.lng };
+  document.getElementById('modal-place-title').textContent = 'Edit Place';
+  document.getElementById('place-name').value = p.name;
+  document.getElementById('place-note').value = p.note || '';
+  document.getElementById('place-status').value = p.visited ? 'visited' : 'todo';
+  document.querySelectorAll('.cat-btn').forEach(function(b) { b.classList.remove('active'); });
+  const catBtn = document.querySelector('.cat-btn[data-cat="' + p.category + '"]');
+  if (catBtn) catBtn.classList.add('active');
+  document.getElementById('modal-place-delete').style.display = '';
+  document.getElementById('modal-place').classList.add('open');
+}
+
+document.getElementById('modal-place-cancel').addEventListener('click', function() {
+  document.getElementById('modal-place').classList.remove('open');
+});
+document.getElementById('modal-place').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('open');
+});
+
+document.getElementById('modal-place-save').addEventListener('click', function() {
+  const name = document.getElementById('place-name').value.trim();
+  if (!name) { document.getElementById('place-name').focus(); return; }
+  const activeCat = document.querySelector('.cat-btn.active');
+  const cat = activeCat ? activeCat.dataset.cat : 'other';
+  const note = document.getElementById('place-note').value.trim();
+  const visited = document.getElementById('place-status').value === 'visited';
+
+  if (editingId) {
+    const p = places.find(function(x) { return x.id === editingId; });
+    if (p) { p.name = name; p.note = note; p.category = cat; p.visited = visited; }
+  } else {
+    if (!pendingLatLng) return;
+    places.push({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+      name, note, category: cat, visited,
+      lat: pendingLatLng.lat, lng: pendingLatLng.lng,
+      added: new Date().toISOString()
+    });
+  }
+
+  savePlaces(places);
+  renderMarkers();
+  renderSidebar();
+  document.getElementById('modal-place').classList.remove('open');
+  toast(editingId ? 'Place updated!' : 'Place added!');
+  autoSync();
+});
+
+document.getElementById('modal-place-delete').addEventListener('click', function() {
+  if (!editingId) return;
+  if (!confirm('Remove this place?')) return;
+  places = places.filter(function(p) { return p.id !== editingId; });
+  savePlaces(places);
+  renderMarkers();
+  renderSidebar();
+  document.getElementById('modal-place').classList.remove('open');
+  toast('Place removed.');
+  autoSync();
+});
+
+function toggleVisited(id) {
+  const p = places.find(function(x) { return x.id === id; });
+  if (!p) return;
+  p.visited = !p.visited;
+  savePlaces(places);
+  addMarker(p);
+  renderSidebar();
+  autoSync();
+}
+
+// ─────────────────────────────────────────────
+//  SETTINGS MODAL
+// ─────────────────────────────────────────────
+
+document.getElementById('btn-settings').addEventListener('click', function() {
+  document.getElementById('setting-pat').value = settings.pat || '';
+  document.getElementById('setting-gist-id').value = settings.gistId || '';
+  document.getElementById('modal-settings').classList.add('open');
+});
+
+document.getElementById('modal-settings-cancel').addEventListener('click', function() {
+  document.getElementById('modal-settings').classList.remove('open');
+});
+document.getElementById('modal-settings').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('open');
+});
+
+document.getElementById('modal-settings-save').addEventListener('click', function() {
+  settings.pat = document.getElementById('setting-pat').value.trim();
+  settings.gistId = document.getElementById('setting-gist-id').value.trim();
+  saveSettings(settings);
+  document.getElementById('modal-settings').classList.remove('open');
+  toast('Settings saved!');
+  updateSyncUI();
+});
+
+// Export
+document.getElementById('btn-export').addEventListener('click', function() {
+  const blob = new Blob([JSON.stringify(places, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'wanderlist-backup.json';
+  a.click();
+});
+
+// Import
+document.getElementById('btn-import-trigger').addEventListener('click', function() {
+  document.getElementById('btn-import').click();
+});
+document.getElementById('btn-import').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      if (!Array.isArray(imported)) throw new Error('Invalid');
+      // merge by id
+      imported.forEach(function(p) {
+        if (!places.find(function(x) { return x.id === p.id; })) places.push(p);
+      });
+      savePlaces(places);
+      renderMarkers();
+      renderSidebar();
+      document.getElementById('modal-settings').classList.remove('open');
+      toast('Imported ' + imported.length + ' places!');
+    } catch(err) {
+      toast('Import failed: invalid file.', true);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+// ─────────────────────────────────────────────
+//  GITHUB GIST SYNC
+// ─────────────────────────────────────────────
+
+const GIST_FILENAME = 'wanderlist-data.json';
+
+function updateSyncUI(state) {
+  const dot = document.getElementById('sync-dot');
+  const label = document.getElementById('sync-label');
+  dot.className = '';
+  if (!settings.pat) { label.textContent = 'local only'; return; }
+  if (state === 'ok') { dot.classList.add('ok'); label.textContent = 'synced'; }
+  else if (state === 'err') { dot.classList.add('err'); label.textContent = 'sync error'; }
+  else if (state === 'busy') { dot.classList.add('busy'); label.textContent = 'syncing…'; }
+  else { dot.classList.add('ok'); label.textContent = settings.gistId ? 'gist linked' : 'token set'; }
+}
+
+async function syncToGist() {
+  if (!settings.pat) { toast('Set your GitHub token in Settings first.', true); return; }
+  updateSyncUI('busy');
+  try {
+    const body = { files: {} };
+    body.files[GIST_FILENAME] = { content: JSON.stringify(places, null, 2) };
+    let res;
+    if (settings.gistId) {
+      // update
+      res = await fetch('https://api.github.com/gists/' + settings.gistId, {
+        method: 'PATCH',
+        headers: { Authorization: 'token ' + settings.pat, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+    } else {
+      // create
+      body.description = 'Wanderlist — my places to go';
+      body.public = false;
+      res = await fetch('https://api.github.com/gists', {
+        method: 'POST',
+        headers: { Authorization: 'token ' + settings.pat, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+    }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (!settings.gistId) {
+      settings.gistId = data.id;
+      saveSettings(settings);
+      document.getElementById('setting-gist-id').value = data.id;
+    }
+    updateSyncUI('ok');
+    toast('Synced to GitHub Gist ✓');
+  } catch(e) {
+    updateSyncUI('err');
+    toast('Sync failed: ' + e.message, true);
+  }
+}
+
+async function syncFromGist() {
+  if (!settings.pat || !settings.gistId) { return syncToGist(); }
+  updateSyncUI('busy');
+  try {
+    const res = await fetch('https://api.github.com/gists/' + settings.gistId, {
+      headers: { Authorization: 'token ' + settings.pat }
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const fileData = data.files[GIST_FILENAME];
+    if (!fileData) throw new Error('File not found in Gist');
+    const remote = JSON.parse(fileData.content);
+    // Merge: remote wins for same id, keep local-only ones
+    const merged = [...remote];
+    places.forEach(function(p) {
+      if (!merged.find(function(r) { return r.id === p.id; })) merged.push(p);
+    });
+    places = merged;
+    savePlaces(places);
+    renderMarkers();
+    renderSidebar();
+    updateSyncUI('ok');
+    toast('Loaded ' + remote.length + ' places from Gist ✓');
+  } catch(e) {
+    updateSyncUI('err');
+    toast('Sync failed: ' + e.message, true);
+  }
+}
+
+document.getElementById('btn-sync').addEventListener('click', function() {
+  if (!settings.pat) {
+    document.getElementById('setting-pat').value = settings.pat || '';
+    document.getElementById('setting-gist-id').value = settings.gistId || '';
+    document.getElementById('modal-settings').classList.add('open');
+    toast('Enter your GitHub token to enable sync.');
+    return;
+  }
+  syncFromGist();
+});
+
+function autoSync() {
+  if (settings.pat && settings.gistId) syncToGist();
+}
+
+// ─────────────────────────────────────────────
+//  TOAST
+// ─────────────────────────────────────────────
+
+let toastTimer = null;
+function toast(msg, isErr) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show' + (isErr ? ' err' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { el.className = ''; }, 3000);
+}
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+
+renderMarkers();
+renderSidebar();
+updateSyncUI();
+
+// Auto-load from Gist on startup if configured
+if (settings.pat && settings.gistId) {
+  setTimeout(syncFromGist, 800);
+}
+</script>
+</body>
+</html>
