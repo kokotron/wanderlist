@@ -483,14 +483,18 @@
 
     <div class="setting-row">
       <h4>☁ GitHub Gist Sync</h4>
-      <p>Sync your places across devices using a private GitHub Gist. Create a personal access token at <strong>github.com → Settings → Developer settings → Tokens</strong> with <em>gist</em> scope only.</p>
+      <p>Your data is stored in a private Gist on your own GitHub account. Each device needs your token + Gist ID entered once. <strong>To use on a new device:</strong> copy the Gist ID from here and paste it there along with your token.</p>
+      <p style="margin-top:4px">Generate a token at <strong>github.com → Settings → Developer settings → Personal access tokens</strong> with <em>gist</em> scope only.</p>
       <div class="field">
         <label>Personal Access Token</label>
         <input id="setting-pat" type="password" placeholder="ghp_…">
       </div>
       <div class="field">
-        <label>Gist ID <span style="opacity:.5">(auto-filled after first sync)</span></label>
-        <input id="setting-gist-id" type="text" placeholder="Will be created automatically">
+        <label>Gist ID <span style="opacity:.5">(auto-created on first sync — copy this to other devices)</span></label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input id="setting-gist-id" type="text" placeholder="Will be created automatically" style="flex:1">
+          <button class="mbtn" id="btn-copy-gist-id" title="Copy Gist ID" style="padding:7px 10px;flex-shrink:0">⎘ Copy</button>
+        </div>
       </div>
     </div>
 
@@ -881,6 +885,18 @@ document.getElementById('modal-settings-save').addEventListener('click', functio
   updateSyncUI();
 });
 
+document.getElementById('btn-copy-gist-id').addEventListener('click', function() {
+  const val = document.getElementById('setting-gist-id').value.trim();
+  if (!val) { toast('No Gist ID yet — sync first to create one.', true); return; }
+  navigator.clipboard.writeText(val).then(function() {
+    toast('Gist ID copied to clipboard!');
+  }).catch(function() {
+    // fallback: select the text
+    document.getElementById('setting-gist-id').select();
+    toast('Select + copy the Gist ID above.');
+  });
+});
+
 // Export
 document.getElementById('btn-export').addEventListener('click', function() {
   const blob = new Blob([JSON.stringify(places, null, 2)], { type: 'application/json' });
@@ -966,9 +982,12 @@ async function syncToGist() {
       settings.gistId = data.id;
       saveSettings(settings);
       document.getElementById('setting-gist-id').value = data.id;
+      updateSyncUI('ok');
+      toast('Gist created! Open ⚙ Settings to copy the ID to other devices.');
+    } else {
+      updateSyncUI('ok');
+      toast('Synced to GitHub Gist ✓');
     }
-    updateSyncUI('ok');
-    toast('Synced to GitHub Gist ✓');
   } catch(e) {
     updateSyncUI('err');
     toast('Sync failed: ' + e.message, true);
@@ -979,14 +998,25 @@ async function syncFromGist() {
   if (!settings.pat || !settings.gistId) { return syncToGist(); }
   updateSyncUI('busy');
   try {
-    const res = await fetch('https://api.github.com/gists/' + settings.gistId, {
-      headers: { Authorization: 'token ' + settings.pat }
+    // Step 1: get the Gist metadata to find the raw_url
+    const metaRes = await fetch('https://api.github.com/gists/' + settings.gistId, {
+      headers: {
+        Authorization: 'token ' + settings.pat,
+        'Cache-Control': 'no-cache'
+      }
     });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    const fileData = data.files[GIST_FILENAME];
+    if (!metaRes.ok) throw new Error('HTTP ' + metaRes.status);
+    const meta = await metaRes.json();
+    const fileData = meta.files[GIST_FILENAME];
     if (!fileData) throw new Error('File not found in Gist');
-    const remote = JSON.parse(fileData.content);
+
+    // Step 2: always fetch via raw_url to avoid truncation + caching
+    const rawRes = await fetch(fileData.raw_url + '?t=' + Date.now(), {
+      headers: { 'Cache-Control': 'no-cache' }
+    });
+    if (!rawRes.ok) throw new Error('Raw fetch HTTP ' + rawRes.status);
+    const remote = await rawRes.json();
+
     // Merge: remote wins for same id, keep local-only ones
     const merged = [...remote];
     places.forEach(function(p) {
