@@ -617,13 +617,21 @@ function escHtml(s) {
 //  MAP
 // ─────────────────────────────────────────────
 
-var map = L.map('map', { center: [20, 10], zoom: 2, zoomControl: true });
+var map = L.map('map', { center: [20, 10], zoom: 4, zoomControl: true });
 
+/*
 L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
   subdomains: 'abcd', maxZoom: 19
 }).addTo(map);
-
+*/
+  
+L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg', {
+    maxZoom: 16,
+    apikey: '85b5c1b2-13f9-4e09-a6a0-539f09baf490',
+    attribution: '&copy; <a href="https://stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://stamen.com/" target="_blank">Stamen Design</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
+}).addTo(map);
+  
 // ── PREVIEW PIN ──
 var previewMarker = null;
 var previewPopup = null;
