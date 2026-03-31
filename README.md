@@ -6,7 +6,7 @@ The result was pretty solid from the beggining, now I hope to try and use it and
 Some more information about this webpage/app:
 
 ### Features
-=
+
 • Click anywhere on the map to drop a pin (or search → click a result)\
 • 8 categories with color-coded pins (Nature, City, Food, Beach, History, Art, Adventure, Other)\
 • To-go / Visited toggle with strikethrough in the sidebar\
